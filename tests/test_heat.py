@@ -15,11 +15,12 @@ class TestHeat(TestCase):
 
     def test_heat_loss(self):
         """
-        This is a test to check whether the network (pipes) are dissipating milp as we expect.
+        This is a test to check whether the network (pipes) are dissipating heat as we expect.
 
         Checks:
         - Check that the produced heat is strictly higher than the consumed heat
         - Check for energy conservation in the network
+        - Check that __flow_direct_var is created as heat losses are turned on.
 
         """
         import models.source_pipe_sink.src.double_pipe_heat as double_pipe_heat
@@ -42,9 +43,11 @@ class TestHeat(TestCase):
         source = results[f"{name_to_id_map['source']}.Heat_source"]
         demand = results[f"{name_to_id_map['demand']}.Heat_demand"]
 
-        # With non-zero milp losses in pipes, the demand should always be
+        # With non-zero heat losses in pipes, the demand should always be
         # strictly lower than what is produced.
         np.testing.assert_array_less(demand, source)
+        for pipe in case.energy_system_components["heat_pipe"]:
+            self.assertIn(f"{pipe}.__flow_direct_var", results)
 
         demand_matching_test(case, results)
         energy_conservation_test(case, results)
@@ -58,11 +61,12 @@ class TestHeat(TestCase):
 
     def test_zero_heat_loss(self):
         """
-        Check the optimiziation function when the zero heat loss is used.
+        Check the optimization function when the zero heat loss is used.
 
         Checks:
         - Should check that produced equals consumed.
         - Should check the heat loss variable being zero
+        - Check that __flow_direct_var is not created as heat losses are turned off.
 
         """
         import models.source_pipe_sink.src.double_pipe_heat as double_pipe_heat
@@ -85,10 +89,95 @@ class TestHeat(TestCase):
         for pipe in case.energy_system_components.get("heat_pipe", []):
             np.testing.assert_allclose(results[f"{pipe}__hn_heat_loss"], 0.0)
             np.testing.assert_allclose(parameters[f"{pipe}.Heat_loss"], 0.0)
+            self.assertNotIn(f"{pipe}.__flow_direct_var", results)
+            self.assertNotIn(pipe, case._heat_pipe_to_flow_direct_map)
 
         demand_matching_test(case, results)
         energy_conservation_test(case, results)
         heat_to_discharge_test(case, results)
+
+    def test_zero_pipe_losses_with_storage(self):
+        """
+        Check the optimization function when the heat loss and head losses are turned off
+        including a storage asset but without the flow direction variables being created.
+
+        Checks:
+        - demand matching
+        - energy conservation
+        - that __flow_direct_var is not created but .__is_charging variable is created for the
+        storage.
+
+        """
+
+        import models.unit_cases.case_3a.src.run_3a as run_3a
+        from models.unit_cases.case_3a.src.run_3a import HeatProblem
+
+        class Model(HeatProblem):
+            def update_heat_network_settings(self):
+                settings = super().update_heat_network_settings()
+                settings["head_loss_option"] = HeadLossOption.NO_HEADLOSS
+                return settings
+
+            def energy_system_options(self):
+                options = super().energy_system_options()
+                options["neglect_pipe_heat_losses"] = True
+                return options
+
+        case = run_esdl_mesido_optimization(
+            Model,
+            base_folder=Path(run_3a.__file__).resolve().parent.parent,
+            esdl_file_name="3a.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.xml",
+        )
+        results = case.extract_results()
+        for pipe in case.energy_system_components["heat_pipe"]:
+            self.assertNotIn(f"{pipe}.__flow_direct_var", results)
+        for buffer in case.energy_system_components["heat_buffer"]:
+            charging = results[f"{buffer}.__is_charging"]
+            discharge = results[f"{buffer}.HeatIn.Q"]
+            self.assertTrue(np.all(discharge[charging < 0.5] <= 1e-6))
+            self.assertTrue(np.all(discharge[charging > 0.5] >= -1e-6))
+        demand_matching_test(case, results)
+        energy_conservation_test(case, results)
+
+    def test_head_losses_without_pipe_heat_losses_keep_flow_direction(self):
+        """
+        Check the optimization function when the heat loss are turned off but head losses are
+        turned on such that flow direction variables need to be created.
+
+        Checks:
+        - demand matching
+        - energy conservation
+        - that __flow_direct_var is created.
+
+        """
+        import models.source_pipe_sink.src.double_pipe_heat as double_pipe_heat
+        from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
+
+        class Model(SourcePipeSink):
+            def update_heat_network_settings(self):
+                settings = super().update_heat_network_settings()
+                settings["head_loss_option"] = HeadLossOption.LINEARIZED_ONE_LINE_EQUALITY
+                return settings
+
+            def energy_system_options(self):
+                options = super().energy_system_options()
+                options["neglect_pipe_heat_losses"] = True
+                return options
+
+        case = run_esdl_mesido_optimization(
+            Model,
+            base_folder=Path(double_pipe_heat.__file__).resolve().parent.parent,
+            esdl_file_name="sourcesink.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.csv",
+        )
+        results = case.extract_results()
+        for pipe in case.energy_system_components["heat_pipe"]:
+            self.assertIn(f"{pipe}.__flow_direct_var", results)
 
     def test_heat_prod_profile(self):
         """
@@ -426,6 +515,28 @@ class TestDisconnectablePipe(TestCase):
             options = super().energy_system_options()
             options["heat_loss_disconnected_pipe"] = False
             return options
+
+    class ModelLosslessPipe(ModelDisconnected):
+        def energy_system_options(self):
+            options = super().energy_system_options()
+            options["neglect_pipe_heat_losses"] = True
+            return options
+
+    def test_disconnected_lossless_pipe(self):
+        case = run_esdl_mesido_optimization(
+            self.ModelLosslessPipe,
+            base_folder=self.base_folder,
+            esdl_file_name="sourcesink.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_import.csv",
+        )
+        results = case.extract_results()
+        for pipe in case.energy_system_components["heat_pipe"]:
+            self.assertNotIn(f"{pipe}.__flow_direct_var", results)
+            disconnected = results[f"{pipe}.__is_disconnected"] > 0.5
+            np.testing.assert_allclose(results[f"{pipe}.Q"][disconnected], 0.0, atol=1e-6)
+            np.testing.assert_allclose(results[f"{pipe}.HeatIn.Heat"][disconnected], 0.0, atol=1e-4)
 
     def test_disconnected_network_pipe(self):
         """

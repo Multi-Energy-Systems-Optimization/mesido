@@ -172,6 +172,15 @@ class AssetToHeatComponent(_AssetToComponentBase):
         self.use_esdl_ranged_constraint = kwargs.get("use_esdl_ranged_constraint", False)
         self.include_head_loss_variables = self.energy_system_options.get("include_head_losses")
         self.esdl_assets = kwargs.get("esdl_assets", {})
+        # losses linked to the flow in the heat network are included
+        flow_based_losses_included = (
+            self.include_head_loss_variables
+            or not self.energy_system_options.get("neglect_pipe_heat_losses", False)
+        )
+        # flow direction variables in the heatnetwork are required if any losses have to be modeled.
+        self.flow_dir_var_required = flow_based_losses_included or self.energy_system_options.get(
+            "include_flow_direction_variables", False
+        )
 
     @property
     def _rho_cp_modifiers(self) -> Dict:
@@ -626,6 +635,13 @@ class AssetToHeatComponent(_AssetToComponentBase):
         if isinstance(q_nominal, dict):
             q_nominal = q_nominal["Q_nominal"]
 
+        # discrete charging variables needs to be created if there are no flow direction
+        # variables available
+        include_disc_charge_var = (
+            self.energy_system_options.get("heat_storage_charging_variables", False)
+            or not self.flow_dir_var_required
+        )
+
         modifiers = dict(
             height=r,
             radius=r,
@@ -634,9 +650,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
             Stored_heat=dict(min=min_heat, max=max_heat),
             Heat_buffer=dict(min=-hfr_discharge_max, max=hfr_charge_max),
             init_Heat=min_heat,
-            include_discrete_charge_var=self.energy_system_options.get(
-                "heat_storage_charging_variables", False
-            ),
+            include_discrete_charge_var=include_disc_charge_var,
             **self._generic_modifiers(asset),
             **self._generic_heat_modifiers(
                 self.include_head_loss_variables, -hfr_discharge_max, hfr_charge_max, q_nominal
@@ -1101,6 +1115,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
         modifiers = dict(
             length=length,
             diameter=diameter,
+            include_flow_direction_variable=self.flow_dir_var_required,
             disconnectable=(
                 self._is_disconnectable_pipe(asset)
                 if not self.energy_system_options.get("all_pipes_disconnectable", False)
@@ -1718,6 +1733,12 @@ class AssetToHeatComponent(_AssetToComponentBase):
 
         q_nominal = min(self._get_connected_q_nominal(asset), q_max_ates * aggregation_count)
 
+        # discrete charging variables needs to be created if there are no flow direction
+        # variables available
+        include_disc_charge_var = (
+            self.energy_system_options.get("heat_storage_charging_variables", False)
+            or not self.flow_dir_var_required
+        )
         modifiers = dict(
             Q=dict(
                 min=-q_max_ates * aggregation_count,
@@ -1737,9 +1758,7 @@ class AssetToHeatComponent(_AssetToComponentBase):
                 max=hfr_charge_max * aggregation_count * 180.0 * 24 * 3600.0,
                 nominal=hfr_charge_max * aggregation_count * 30.0 * 24 * 3600.0,
             ),
-            include_discrete_charge_var=self.energy_system_options.get(
-                "heat_storage_charging_variables", False
-            ),
+            include_discrete_charge_var=include_disc_charge_var,
             **self._generic_modifiers(asset),
             **self._generic_heat_modifiers(
                 self.include_head_loss_variables,
