@@ -375,6 +375,9 @@ class ESDLMixin(
                     "contained_measure": _build_contained_measure_parameters(measures)
                 }
 
+        # Check if building_parameters is empty
+        if not building_parameters:
+            logger.warning("No building parameters were found.")
         return building_parameters
 
     @property

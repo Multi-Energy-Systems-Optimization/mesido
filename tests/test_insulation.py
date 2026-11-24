@@ -222,5 +222,5 @@ if __name__ == "__main__":
     start_time = time.time()
     a = TestInsulation()
     a.test_insulation_heatdemand()
-    a.test_insulation_heatdemand_b()
+    # a.test_insulation_heatdemand_b()
     print("Execution time: " + time.strftime("%M:%S", time.gmtime(time.time() - start_time)))
