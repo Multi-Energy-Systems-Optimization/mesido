@@ -1,0 +1,180 @@
+Pipe
+----
+Pipes represent the hydraulic transport connection between two network nodes.
+
+Pipe Asset Attributes
+^^^^^^^^^^^^^^^^^^^^^
+The following table provides an overview of the relevant attributes for this asset, including their configuration in the
+front end and their interpretation and use by the optimizer.
+
+.. list-table:: Asset Attributes
+   :widths: 35 25 60 25 25 70
+   :header-rows: 1
+
+   * - ESDL attribute category
+     - ESDL attribute
+     - Definition
+     - Units
+     - Required/Optional
+     - Optimizer use
+   * - Basic attributes
+     - Name
+     - Asset unique name
+     - \-
+     - Required
+     - The supply pipe has to be drawn by the user, while the return pipe is
+       created via the pipe duplicator.
+   * - Basic attributes
+     - State
+     - States if the asset is ENABLED or OPTIONAL
+     - \-
+     - Required
+     - ENABLED:
+       use the specific asset with all its specified attributes
+
+       OPTIONAL:
+       allows the optimizer to determine if the asset is required
+       (if not then it will be removed from the network), else if the asset is
+       required then it will be sized appropriately
+   * - Basic attributes
+     - Technical Lifetime
+     - Operational lifetime of the asset (default=30, min=1, max 50)
+     - Years
+     - Optional
+     - NA
+   * - Basic attributes
+     - Diameter
+     - Nominal pipe diameter (DN)
+     - mm
+     - Required
+     - The specified DN size is used to lookup S1-Steel pipe properties (inner
+       diameter and insulation specifications) in the pipe specifications
+       listed in the Logstor EDR assets.
+
+       If the pipe ``state=ENABLED`` then this pipe size is used.
+
+       If the pipe ``state=OPTIONAL`` then this is the maximum pipe DN size
+       being considered by the optimizer. The minimum pipe DN size being
+       considered is DN150.
+   * - Basic attributes
+     - Length
+     - Pipe length
+     - m
+     - Required
+     - If the pipe length is shorter than 25 m then the length is set to 25 m.
+   * - Ports
+     - Inport and OutPort (1 of each)
+     - The in port and the out port for the asset should be connected to 1
+       hydraulically coupled network.
+
+       Each port must have a carrier assigned to it.
+     - \-
+     - Required
+     - \-
+   * - Cost Information
+     - Investment Costs
+     - CAPEX: Once-off cost linked to the length of the pipe
+     - EUR/m
+     - Optional
+     - If the pipe ``state=ENABLED`` then the cost for the specified pipe is
+       used.
+
+       If no investment cost is specified then no pipe cost will be
+       reflected in the TCO value/breakdown.
+
+       If the pipe ``state=OPTIONAL`` then the cost associated per pipe DN size
+       (pipe sizing being considered by the optimizer) is used. Costs for
+       S1-Steel pipes in the Logstor EDR assets are used.
+
+
+Pipes from EDR Assets
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The Design Toolkit also provides access to predefined configurations of this asset type, with the required input
+settings, including benchmark cost values, already assigned. More information on these configurations is available in
+the `ESDL Energy Data Repository (EDR) <https://edr.hesi.energy/>`_.
+
+Only "Steel-S1-DN-XXX" pipe family from EDR assets are supported by Design Toolkit.
+
+Pipe: Steel-S1-DN-XXX:
+
+* `Pipe: Steel-S1-DN-20 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S1-DN-20.edd>`_
+* `Pipe: Steel-S1-DN-25 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S1-DN-25.edd>`_
+* `Pipe: Steel-S1-DN-32 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S1-DN-32.edd>`_
+* `Pipe: Steel-S1-DN-40 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S1-DN-40.edd>`_
+* `Pipe: Steel-S1-DN-50 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S1-DN-50.edd>`_
+* `Pipe: Steel-S1-DN-65 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S1-DN-65.edd>`_
+* `Pipe: Steel-S1-DN-80 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S1-DN-80.edd>`_
+* `Pipe: Steel-S1-DN-100 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S1-DN-100.edd>`_
+* `Pipe: Steel-S1-DN-125 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S1-DN-125.edd>`_
+* `Pipe: Steel-S1-DN-150 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S1-DN-150.edd>`_
+* `Pipe: Steel-S1-DN-200 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S1-DN-200.edd>`_
+* `Pipe: Steel-S1-DN-250 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S1-DN-250.edd>`_
+* `Pipe: Steel-S1-DN-300 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S1-DN-300.edd>`_
+* `Pipe: Steel-S1-DN-350 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S1-DN-350.edd>`_
+* `Pipe: Steel-S1-DN-400 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S1-DN-400.edd>`_
+* `Pipe: Steel-S1-DN-450 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S1-DN-450.edd>`_
+* `Pipe: Steel-S1-DN-500 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S1-DN-500.edd>`_
+* `Pipe: Steel-S1-DN-600 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S1-DN-600.edd>`_
+* `Pipe: Steel-S1-DN-700 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S1-DN-700.edd>`_
+* `Pipe: Steel-S1-DN-800 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S1-DN-800.edd>`_
+* `Pipe: Steel-S1-DN-900 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S1-DN-900.edd>`_
+* `Pipe: Steel-S1-DN-1000 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S1-DN-1000.edd>`_
+* `Pipe: Steel-S1-DN-1100 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S1-DN-1100.edd>`_
+* `Pipe: Steel-S1-DN-1200 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S1-DN-1200.edd>`_
+
+Pipe: Steel-S2-DN-XXX:
+
+* `Pipe: Steel-S2-DN-20 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S2-DN-20.edd>`_
+* `Pipe: Steel-S2-DN-25 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S2-DN-25.edd>`_
+* `Pipe: Steel-S2-DN-32 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S2-DN-32.edd>`_
+* `Pipe: Steel-S2-DN-40 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S2-DN-40.edd>`_
+* `Pipe: Steel-S2-DN-50 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S2-DN-50.edd>`_
+* `Pipe: Steel-S2-DN-65 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S2-DN-65.edd>`_
+* `Pipe: Steel-S2-DN-80 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S2-DN-80.edd>`_
+* `Pipe: Steel-S2-DN-100 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S2-DN-100.edd>`_
+* `Pipe: Steel-S2-DN-125 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S2-DN-125.edd>`_
+* `Pipe: Steel-S2-DN-150 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S2-DN-150.edd>`_
+* `Pipe: Steel-S2-DN-200 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S2-DN-200.edd>`_
+* `Pipe: Steel-S2-DN-250 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S2-DN-250.edd>`_
+* `Pipe: Steel-S2-DN-300 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S2-DN-300.edd>`_
+* `Pipe: Steel-S2-DN-350 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S2-DN-350.edd>`_
+* `Pipe: Steel-S2-DN-400 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S2-DN-400.edd>`_
+* `Pipe: Steel-S2-DN-450 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S2-DN-450.edd>`_
+* `Pipe: Steel-S2-DN-500 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S2-DN-500.edd>`_
+* `Pipe: Steel-S2-DN-600 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S2-DN-600.edd>`_
+
+Pipe: Steel-S3-DN-XXX:
+
+* `Pipe: Steel-S3-DN-20 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S3-DN-20.edd>`_
+* `Pipe: Steel-S3-DN-25 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S3-DN-25.edd>`_
+* `Pipe: Steel-S3-DN-32 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S3-DN-32.edd>`_
+* `Pipe: Steel-S3-DN-40 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S3-DN-40.edd>`_
+* `Pipe: Steel-S3-DN-50 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S3-DN-50.edd>`_
+* `Pipe: Steel-S3-DN-65 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S3-DN-65.edd>`_
+* `Pipe: Steel-S3-DN-80 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S3-DN-80.edd>`_
+* `Pipe: Steel-S3-DN-100 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S3-DN-100.edd>`_
+* `Pipe: Steel-S3-DN-125 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S3-DN-125.edd>`_
+* `Pipe: Steel-S3-DN-150 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S3-DN-150.edd>`_
+* `Pipe: Steel-S3-DN-200 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S3-DN-200.edd>`_
+* `Pipe: Steel-S3-DN-250 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S3-DN-250.edd>`_
+* `Pipe: Steel-S3-DN-300 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S3-DN-300.edd>`_
+* `Pipe: Steel-S3-DN-350 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S3-DN-350.edd>`_
+* `Pipe: Steel-S3-DN-400 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S3-DN-400.edd>`_
+* `Pipe: Steel-S3-DN-450 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S3-DN-450.edd>`_
+* `Pipe: Steel-S3-DN-500 <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FLogstor%2FSteel-S3-DN-500.edd>`_
+
+Constraints
+^^^^^^^^^^^
+* PipeDiameterConstraint:
+    * The selected pipe diameter must correspond to one of the available
+      Logstor EDR pipe sizes for Steel-S1-DN-XXX pipe family.
+    * For ``state=ENABLED``, the specified DN is treated as fixed.
+    * For ``state=OPTIONAL``, the optimizer may choose a DN between DN150 and
+      the configured maximum DN.
+
+Assumptions
+^^^^^^^^^^^
+* Pipe length is lower-bounded at 25 m; shorter input lengths are treated as 25 m.
+* The pipe heat loss calculation accounts for both the heat transfer from the pipe to the ground and the heat transfer between the supply and return pipes. The latter is taken into account when the return pipes are created with the pipe duplicator, since in that case they are assumed to be laid next to each other and considered as a related pipe pair.
+* If a pipe pair set as related to the each other, pipe sizing is performed over only one of the pipe assets, and the other pipe is sized identically.
+* The heat physics described for the pipe in :ref:`heat_physics_pipe` section applies to the pipe asset.

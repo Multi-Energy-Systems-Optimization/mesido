@@ -1,0 +1,137 @@
+Heat Exchanger
+--------------
+A heat exchanger transfers thermal energy between two hydraulically decoupled fluid streams.
+
+Heat Exchanger Asset Attributes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The following table provides an overview of the relevant attributes for this asset, including their configuration in the
+front end and their interpretation and use by the optimizer.
+
+.. list-table:: Asset Attributes
+   :widths: 35 25 60 25 25 70
+   :header-rows: 1
+
+   * - ESDL attribute category
+     - ESDL attribute
+     - Definition
+     - Units
+     - Required/Optional
+     - Optimizer use
+   * - Basic attributes
+     - Name
+     - Asset unique name
+     - \-
+     - Required
+     - \-
+   * - Basic attributes
+     - State
+     - States if the asset is ENABLED or OPTIONAL
+     - \-
+     - Required
+     - ENABLED:
+       use the specific asset with all its specified attributes
+
+       OPTIONAL:
+       allows the optimizer to determine if the asset is required
+       (if not then it will be removed from the network), else if the asset is
+       required then it will be sized appropriately
+   * - Basic attributes
+     - Technical Lifetime
+     - Operational lifetime of the asset (default=30, min=1, max 50)
+     - Years
+     - Optional
+     - NA
+   * - Advanced attributes
+     - Efficiency
+     - The efficiency of the heat exchanger in terms of how much heat on the
+       primary side gets transferred to the secondary side.
+
+       Heat loss in the exchanger = Efficiency - 1.0.
+
+       (default=1.0, min=0.0, max=1.0).
+     - \-
+     - Optional
+     - \-
+   * - Advanced attributes
+     - Capacity
+     - Maximum heat that can be transferred from the primary to secondary side
+       of the heat exchanger (max heat that can be added to the system on the
+       secondary side).
+     - W
+     - Required
+     - \-
+   * - Ports
+     - Inport and OutPort (2 of each)
+     - The in port and the out port for the heat exchanger primary and
+       secondary side.
+
+       The primary and secondary side should be connected to hydraulically
+       decoupled networks.
+
+       Each port must have a carrier assigned to it.
+
+       Port naming convention required: PrimIn, PrimOut, SecIn & SecOut.
+
+       Primary side: :math:`\mathrm{T_{PrimIn} > T_{PrimOut}}`
+       Secondary side: :math:`\mathrm{T_{SecOut} > T_{SecIn}}`
+
+       :math:`\mathrm{T_{PrimIn} > T_{SecOut}}`
+
+       The lines in the diagram represent pipe, with the start of the line
+       representing a pipe inlet and the arrow at the end of the line
+       representing a pipe outlet.
+     - \-
+     - Required
+     - Heat is transferred from the primary side to the secondary side
+       (2 hydraulically decoupled networks).
+   * - Cost Information
+     - Investment Costs
+     - CAPEX: Once-off cost linked to the size (max heat that can be added to
+
+       the system on the secondary side) of the asset
+     - EUR/MW or EUR/kW
+     - Required
+     - \-
+   * - Cost Information
+     - Installation Costs
+     - CAPEX: Once-off cost
+     - EUR
+     - Required
+     - \-
+   * - Cost Information
+     - Fixed Maintenance Costs
+     - OPEX: Cost per year linked to the size (max heat that can be added to
+       the system on the secondary side) of the asset
+     - EUR/MW/yr or EUR/kW/yr
+     - Optional
+     - \-
+   * - Cost Information
+     - Fixed Operational Costs
+     - OPEX: Cost per year linked to the size (max heat that can be added to
+       the system on the secondary side) of the asset
+     - EUR/MW/yr or EUR/kW/yr
+     - Optional
+     - \-
+
+Heat Exchanger from EDR Assets
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The Design Toolkit also provides access to predefined configurations of this asset type, with the required input
+settings, including benchmark cost values, already assigned. More information on these configurations is available in
+the `ESDL Energy Data Repository (EDR) <https://edr.hesi.energy/>`_.
+
+* `HeatExchange: Heat exchanger <https://edr.hesi.energy/cat/Assets/%2Fedr%2FPublic%2FAssets%2FDistrict%20heating%20and%20cooling%20networks%2FHeat%20exchanger.edd>`_
+
+Constraints
+^^^^^^^^^^^
+No assets specific constraints are defined for heat exchange asset.
+
+Assumptions
+^^^^^^^^^^^
+* The heat exchange operates with an efficiency that is constant over time. Efficiency is equal to the ratio of
+  the primary heat input to secondary heat output.
+* The primary side of the heat exchange must be connected to a hydraulic network with a lower supply temperature.
+  It behaves as a demand asset, and the physics described for demand assets in the :ref:`heat_physics_demand` section
+  applies to the primary side of the heat exchange.
+* The secondary side of the heat exchange must be connected to a hydraulic network with a higher supply temperature.
+  It behaves as a source asset, and the physics described for source assets in the :ref:`heat_physics_source` section
+  applies to the secondary side of the heat exchange.

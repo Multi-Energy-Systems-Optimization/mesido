@@ -6,6 +6,7 @@ Financial
 MESIDO offers the posibility to model the cost and revenues based on the design and operation of the energy system.
 The asset cost modelling includes both the CAPEX and OPEX over the time-horizon of the optimization.
 
+.. _regular-cost-section:
 Asset Cost Components
 ---------------------
 
