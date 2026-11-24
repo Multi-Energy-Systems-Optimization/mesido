@@ -260,9 +260,9 @@ class ElectricityPhysicsMixin(
 
     def __check_storage_values_and_set_bounds_at_t0(self):
         """
-        In this function we force the buffer at t0 to have a certain amount of set energy in it.
+        In this function we force the storage at t0 to have a certain amount of set energy in it.
         We do this via the bounds, by providing the bounds with a time-series where the first
-        element is the initial heat in the buffer.
+        element is the initial electricity in the storage.
         """
         t = self.times()
         # We assume that t0 is always equal to self.times()[0]

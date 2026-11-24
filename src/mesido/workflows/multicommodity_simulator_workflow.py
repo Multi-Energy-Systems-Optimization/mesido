@@ -3,7 +3,6 @@ import logging
 import os
 import time
 from enum import IntEnum
-from pathlib import Path
 from typing import Dict
 
 import esdl
@@ -70,6 +69,7 @@ def _goal_range_and_nominal(target, zero_range_fallback=False, zero_nominal_fall
 
 
 def _merge_stage_results(total_results, results):
+    """Append stage results, skipping the repeated first sample after the initial stage."""
     if total_results is None:
         return results
 
@@ -91,6 +91,7 @@ def _update_stage_bounds(
     end_time,
     storage_initial_state_bounds,
 ):
+    """Update constrained assets' initial-state bounds for the next simulation stage."""
     if end_time <= simulated_window + simulation_window_size:
         return storage_initial_state_bounds
 
@@ -118,8 +119,8 @@ def _collect_controlled_assets(
     assets_without_control,
     type_variable_map,
     include_asset,
-    unused_asset_attribute,
 ):
+    """Select controlled assets and map each asset to its optimization variable."""
     assets_to_include = {}
     asset_variable_map = {}
     available_timeseries = [t.split(".")[0] for t in self.io.get_timeseries_names()]
@@ -147,6 +148,11 @@ def _collect_controlled_assets(
 
 
 def _create_merit_path_goals(self, asset_info, max_value_merit, index_start_of_priority, merit_key):
+    """Build merit-order goals for the configured source, conversion, demand, and storage assets.
+    This method creates the goals for every asset that is based on the marginal cost and the
+    relevant variable for that asset. Depending on the type of asset, the goal is a minimisation
+    or maximisation.
+    """
     goals = []
     assets_to_include = asset_info["assets_to_include"]
     assets_list = asset_info["assets_to_include_list"]
@@ -336,8 +342,6 @@ class SolverHIGHS:
     """
     Class setting the solver options to use highs in the multicommodity_simulator, which can be
     inherited by a class describing the optimization problem.
-    Presolve is turned off as in some cases in resulted in an infeasible problem and the relative
-    MIP gap is set to 0.01%
     """
 
     def solver_options(self):
@@ -346,7 +350,6 @@ class SolverHIGHS:
         options["solver"] = "highs"
         highs_options = options["highs"] = {}
         highs_options["mip_rel_gap"] = 0.0001
-        # highs_options["presolve"] = "off"
 
         options["gurobi"] = None
         options["cplex"] = None
@@ -358,7 +361,6 @@ class SolverGurobi:
     """
     Class setting the solver options to use Gurobi in the multicommodity_simulator, which can be
     inherited by a class describing the optimization problem.
-    The relative MIP gap is set to 0.01% and 4 threads are used to sole the problem.
     """
 
     def __init__(self, *args, **kwargs):
@@ -584,7 +586,7 @@ class _GoalsAndOptions:
                     if type in map_demand.keys():
                         goals.append(TargetDemandGoal(state, target))
                     else:
-                        priority = 2  # 2 * len(self._esdl_assets)
+                        priority = 2 * len(self._esdl_assets)
                         goals.append(TargetProducerGoal(state, target, priority))
 
         return goals
@@ -677,6 +679,13 @@ class MultiCommoditySimulator(
     To obtain this workflow the objective functions are setup according to the scheme described
     below.
 
+    Two different control strategies are available:
+    1. MERIT_ORDER
+    2. MARGINAL_COST
+    The default is set to MERIT_ORDER and is explained below. The MARGINAL_COST control strategy
+    considers all the assets with its marginal costs together in one priority, and minimizes
+    those total costs.
+
     Goal priorities are:
     1. Match target demand specified
     2. Producers with highest marginal costs are minimised and Consumers with highest marginal
@@ -699,7 +708,7 @@ class MultiCommoditySimulator(
         self._qpsol = None
         self._priorities_output = []
         self._save_json = kwargs.get("_save_json", False)
-        self._asset_control_type = AssetControlType.MERIT_ORDER  # AssetControlType.MARGINAL_COST
+        self._asset_control_type = AssetControlType.MERIT_ORDER
         self._init_storage_bounds = kwargs.get("_init_storage_bounds", None)
         self._turn_presolve_off = False
 
@@ -749,7 +758,7 @@ class MultiCommoditySimulator(
             "gas_source": "Gas_source_mass_flow",
             "gas_tank_storage": {"charge": "Gas_tank_flow", "discharge": "__Q_discharge"},
             "electricity_storage": {
-                "charge": "Power_charging",  # "charge": "Effective_power_charging",
+                "charge": "Power_charging",
                 "discharge": "Power_discharging",
             },
             "electrolyzer": "Power_consumed",
@@ -762,7 +771,6 @@ class MultiCommoditySimulator(
                 assets_without_control,
                 type_variable_map,
                 lambda group, asset, available_timeseries: asset not in available_timeseries,
-                "name",
             )
 
             asset_info = {
@@ -781,7 +789,6 @@ class MultiCommoditySimulator(
                 type_variable_map,
                 lambda group, asset, available_timeseries: group != "demand"
                 or asset not in available_timeseries,
-                "name",
             )
             asset_cost_map = {}
 
@@ -791,7 +798,7 @@ class MultiCommoditySimulator(
 
                     esdl_asset = self.esdl_assets[asset]
                     lhv = 1e6  # 120e6 #J/kg LHV hydrogen
-                    multiplier_gas = 1 if "gas" not in asset_var_name else lhv
+                    multiplier_gas = 1 if "gas" not in asset_var_name.lower() else lhv
                     if isinstance(asset_var_name, str):
                         marg_cost = self.__get_marginal_cost(esdl_asset) * multiplier[group]
                         var_name = f"{asset}.{asset_var_name}"
@@ -818,20 +825,6 @@ class MultiCommoditySimulator(
             exit(1)
 
         return asset_info
-
-    def __create_merit_path_goals(self, asset_info, max_value_merit, index_start_of_priority):
-        """
-        This method creates the goals for every asset that is based on the marginal cost and the
-        relevant variable for that asset. Depending on the type of asset, the goal is a minimisation
-        or maximisation.
-        :param asset_info:
-        :param max_value_merit:
-        :param index_start_of_priority:
-        :return:
-        """
-        return _create_merit_path_goals(
-            self, asset_info, max_value_merit, index_start_of_priority, "asset_id"
-        )
 
     def __merit_path_goals(self):
         """
@@ -884,8 +877,8 @@ class MultiCommoditySimulator(
             # producer profile (without merit order)
             index_start_of_priority = 3
 
-            goals = self.__create_merit_path_goals(
-                asset_info, max_value_merit, index_start_of_priority
+            goals = _create_merit_path_goals(
+                asset_info, max_value_merit, index_start_of_priority, "asset_id"
             )
         elif self._asset_control_type == AssetControlType.MARGINAL_COST:
             goals = [MinimizeCosts(asset_info["asset_cost_map"])]
@@ -906,7 +899,7 @@ class MultiCommoditySimulator(
 
     def seed(self, ensemble_member):
         seed = super().seed(ensemble_member)
-        parameters = self.parameters(0)
+        parameters = self.parameters(ensemble_member)
         wind_farms = self.energy_system_components.get("wind_park", [])
         for windfarm in wind_farms:
             variable = f"{windfarm}.maximum_electricity_source"
@@ -946,7 +939,7 @@ class MultiCommoditySimulator(
             raise Exception(
                 "The specified producer usage marginal cost must be a "
                 f"positve integer value, producer name:{asset.name}, current "
-                f"specified marginal cost: {marg_cost[-1]}"
+                f"specified marginal cost: {marg_cost}"
             )
 
         return marg_cost
@@ -1104,7 +1097,6 @@ class MultiCommoditySimulator(
             if "presolve" not in solver_options["highs"].keys():
                 self._turn_presolve_off = True
                 self.optimize()
-        # self._write_updated_esdl(self.get_energy_system_copy(), optimizer_sim=True)
 
 
 class MultiCommoditySimulatorMarginal(
@@ -1143,7 +1135,7 @@ class MultiCommoditySimulatorMarginalNoLosses(MultiCommoditySimulatorMarginal):
         return options
 
 
-def staged_approach_extended(
+def run_simulation_window(
     end_time,
     simulated_window,
     simulation_window_size,
@@ -1211,7 +1203,7 @@ def staged_approach_extended(
 
         constrained_assets_prod = {
             "wind_park": ["Electricity_source"],
-            "electrolyzer": ["Gas_mass_flow_out"],  # ["Power_consumed", "Gas_mass_flow_out"],
+            "electrolyzer": ["Gas_mass_flow_out"],
         }
 
         for asset_type, variables in constrained_assets_prod.items():
@@ -1312,6 +1304,8 @@ def run_sequentially_staged_simulation(
     for quicker run of the optimization/simulation. To ensure a physically sound result the
     variables that affect the outcome of the next stage are constrained by setting bounds, e.g. the
     amount of stored energy in a storage.
+    The last timestep of the previous window is provided as input to the next window as an
+    initial state, to ensure the physical validity of the storage levels.
 
     Parameters
     ----------
@@ -1336,8 +1330,6 @@ def run_sequentially_staged_simulation(
             self.__start_time_index = kwargs.get("start_index", None)
             self.__end_time_index = kwargs.get("end_index", None)
             self._full_time_series = None
-
-            # self.__storage_initial_state_bounds = kwargs.get("storage_initial_state_bounds", {})
 
             logger.warning(
                 f"Optimising timestep {self.__start_time_index} to {self.__end_time_index}"
@@ -1367,7 +1359,6 @@ def run_sequentially_staged_simulation(
             physcially valid.
             """
             bounds = super().bounds()
-            # bounds.update(self.__storage_initial_state_bounds)
             return bounds
 
     # Note that the window size should be larger than 1 otherwise this function is has no
@@ -1389,7 +1380,7 @@ def run_sequentially_staged_simulation(
     (
         solution,
         end_time,
-        simulated_window,
+        simulated_window_index,
         simulation_window_size,
         storage_initial_state_bounds,
         end_time_confirmed,
@@ -1397,7 +1388,7 @@ def run_sequentially_staged_simulation(
         aliases,
         bounds,
         parameters,
-    ) = staged_approach_extended(
+    ) = run_simulation_window(
         end_time,
         0,
         simulation_window_size,
@@ -1411,14 +1402,14 @@ def run_sequentially_staged_simulation(
     )
 
     tic = time.time()
-    for simulated_window in range(
+    for simulated_window_index in range(
         simulation_window_size, end_time, simulation_window_size
     ):  # end_time
         # Note that the end time is not necessarily a multiple of simulation_window_size
         (
             solution,
             end_time,
-            simulated_window,
+            simulated_window_index,
             simulation_window_size,
             storage_initial_state_bounds,
             end_time_confirmed,
@@ -1426,9 +1417,9 @@ def run_sequentially_staged_simulation(
             _,
             _,
             _,
-        ) = staged_approach_extended(
+        ) = run_simulation_window(
             end_time,
-            simulated_window,
+            simulated_window_index,
             simulation_window_size,
             storage_initial_state_bounds,
             end_time_confirmed,
@@ -1477,10 +1468,13 @@ def main(runinfo_path, log_level):
 
 
 if __name__ == "__main__":
-    # main()
-    import tests.models.emerge.src.example as example
+    main()
+    # import tests.models.emerge.src.example as example
+    #
+    # base_folder = Path(example.__file__).resolve().parent.parent
 
-    base_folder = Path(example.__file__).resolve().parent.parent
+    # DO NOT DELETE; below code is used for testing and debugging purposes, where the continuous
+    # and staged simulations is evaluated, but is not part of the main workflow.
 
     # solution = run_optimization_problem_solver(
     #     # MultiCommoditySimulatorNoLosses,
