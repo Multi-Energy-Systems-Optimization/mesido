@@ -358,7 +358,7 @@ Heat loss in a tank is modelled as linear with the stored heat:
 
 where :math:`Q^{a}_{stored}` is the heat stored in the storage asset and :math:`\beta` is the efficiency factor.
 
-The efficiency factor is approximated assuming that tanks are cylindrical and lose heat over their surface area. For cylindrical tanks their surface area approximately increases linearly with the stored heat. A radiation coefficient, :math:`c_r`, of 1 :math:`W/m^2` is used as an approximation.
+The efficiency factor increases linearly with the maximum heat storage capacity of the tank. Its default value corresponds to heat loss of 1% of the stored heat per day.
 
 .. _heat_physics_storage_ates:
 HT-ATES
