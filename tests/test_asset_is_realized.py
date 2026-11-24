@@ -25,6 +25,8 @@ class TestAssetIsRealized(TestCase):
         - That the investment cap per time step is satisfied
         - Check that the total investments actually are sufficient once the asset is realized
         - Check that the asset is not used before the asset_is_realized == 1
+        - Check that __flow_direct_var is not created for the heat pipes, but the
+        is_disconnected variable is created.
         """
         import models.test_case_small_network_with_ates.src.run_ates as run_ates
         from models.test_case_small_network_with_ates.src.run_ates import (

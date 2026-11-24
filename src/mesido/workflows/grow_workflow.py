@@ -939,8 +939,8 @@ def run_end_scenario_sizing(
         parameters = solution.parameters(0)
         bounds = solution.bounds()
 
-        # We give bounds for stage 2 by allowing two DN sizes larger than what was found in the
-        # stage 1 optimization.
+        # We give bounds for stage 2 by allowing two DN sizes larger and one smaller than what was
+        # found in the stage 1 optimization.
         # Assumptions:
         # - The fist pipe class in the list of pipe_classes is pipe DN none
         pc_map = solution.get_pipe_class_map()  # if disconnectable and not connected to source
@@ -959,6 +959,7 @@ def run_end_scenario_sizing(
                     boolean_bounds[var_name] = (0.0, 1.0)
                 else:
                     boolean_bounds[var_name] = (v, v)
+                # This allows for 1 DN size smaller than the one found in stage 1.
                 if v == 1.0 and previous_var_name is not None:
                     boolean_bounds[previous_var_name] = (0.0, 1.0)
 
@@ -989,6 +990,8 @@ def run_end_scenario_sizing(
         t = solution.times()
         from rtctools.optimization.timeseries import Timeseries
 
+        min_flow_dir_vel = 2.5e-2  # m/s, minimum flow direction velocity to consider flow
+        # direction as fixed, based on 4km of heat losses in pipes.
         for p in solution.energy_system_components.get("heat_pipe", []):
             if p not in solution.cold_pipes and parameters[f"{p}.area"] > 0.0:
                 velocity = results[f"{p}.Q"] / parameters[f"{p}.area"]
@@ -998,9 +1001,8 @@ def run_end_scenario_sizing(
                     bounds_pipe = bounds[f"{p}.__flow_direct_var"]
                     for i in range(len(t)):
                         r = results[f"{p}.__flow_direct_var"][i]
-                        # bound to roughly represent 4km of milp losses in pipes
-                        lb.append(r if abs(velocity[i]) > 4e-2 else bounds_pipe[0])
-                        ub.append(r if abs(velocity[i]) > 4e-2 else bounds_pipe[1])
+                        lb.append(r if abs(velocity[i]) > min_flow_dir_vel else bounds_pipe[0])
+                        ub.append(r if abs(velocity[i]) > min_flow_dir_vel else bounds_pipe[1])
 
                     boolean_bounds[f"{p}.__flow_direct_var"] = (
                         Timeseries(t, lb),
@@ -1015,7 +1017,7 @@ def run_end_scenario_sizing(
                             direction_bounds = (0.0, 0.0)
                         elif q_lower > 0.0:
                             direction_bounds = (1.0, 1.0)
-                        elif abs(velocity[i]) > 4e-2:
+                        elif abs(velocity[i]) > min_flow_dir_vel:
                             direction_bounds = (1.0, 1.0) if velocity[i] > 0.0 else (0.0, 0.0)
                         else:
                             direction_bounds = (0.0, 1.0)

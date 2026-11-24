@@ -15,11 +15,12 @@ class TestHeat(TestCase):
 
     def test_heat_loss(self):
         """
-        This is a test to check whether the network (pipes) are dissipating milp as we expect.
+        This is a test to check whether the network (pipes) are dissipating heat as we expect.
 
         Checks:
         - Check that the produced heat is strictly higher than the consumed heat
         - Check for energy conservation in the network
+        - Check that __flow_direct_var is created as heat losses are turned on.
 
         """
         import models.source_pipe_sink.src.double_pipe_heat as double_pipe_heat
@@ -42,7 +43,7 @@ class TestHeat(TestCase):
         source = results[f"{name_to_id_map['source']}.Heat_source"]
         demand = results[f"{name_to_id_map['demand']}.Heat_demand"]
 
-        # With non-zero milp losses in pipes, the demand should always be
+        # With non-zero heat losses in pipes, the demand should always be
         # strictly lower than what is produced.
         np.testing.assert_array_less(demand, source)
         for pipe in case.energy_system_components["heat_pipe"]:
@@ -60,11 +61,12 @@ class TestHeat(TestCase):
 
     def test_zero_heat_loss(self):
         """
-        Check the optimiziation function when the zero heat loss is used.
+        Check the optimization function when the zero heat loss is used.
 
         Checks:
         - Should check that produced equals consumed.
         - Should check the heat loss variable being zero
+        - Check that __flow_direct_var is not created as heat losses are turned off.
 
         """
         import models.source_pipe_sink.src.double_pipe_heat as double_pipe_heat
@@ -102,6 +104,18 @@ class TestHeat(TestCase):
         heat_to_discharge_test(case, results)
 
     def test_zero_pipe_losses_with_storage(self):
+        """
+        Check the optimization function when the heat loss and head losses are turned off
+        including a storage asset but without the flow direction variables being created.
+
+        Checks:
+        - demand matching
+        - energy conservation
+        - that __flow_direct_var is not created but .__is_charging variable is created for the
+        storage.
+
+        """
+
         import models.unit_cases.case_3a.src.run_3a as run_3a
         from models.unit_cases.case_3a.src.run_3a import HeatProblem
 
@@ -136,6 +150,16 @@ class TestHeat(TestCase):
         energy_conservation_test(case, results)
 
     def test_head_losses_without_pipe_heat_losses_keep_flow_direction(self):
+        """
+        Check the optimization function when the heat loss are turned off but head losses are
+        turned on such that flow direction variables need to be created.
+
+        Checks:
+        - demand matching
+        - energy conservation
+        - that __flow_direct_var is created.
+
+        """
         import models.source_pipe_sink.src.double_pipe_heat as double_pipe_heat
         from models.source_pipe_sink.src.double_pipe_heat import SourcePipeSink
 
