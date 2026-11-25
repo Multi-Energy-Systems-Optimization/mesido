@@ -284,14 +284,14 @@ class ElectricityPhysicsMixin(
                 elec_t0 = min_fraction * max_cap
 
             if not np.isnan(elec_t0):
-                # Check that volume/initial stored mass at t0 is within bounds
+                # Check that initial stored energy at t0 is within bounds
                 lb_elec, ub_elec = bounds[stored_elec]
                 lb_elec_t0 = np.inf
                 ub_elec_t0 = -np.inf
                 for bound in [lb_elec, ub_elec]:
                     assert not isinstance(
                         bound, np.ndarray
-                    ), f"{b} stored heat cannot be a vector state"
+                    ), f"{b} stored electricity cannot be a vector state"
                     if isinstance(bound, Timeseries):
                         bound_t0 = bound.values[0]
                     else:
@@ -302,7 +302,7 @@ class ElectricityPhysicsMixin(
                 if elec_t0 < lb_elec_t0 or elec_t0 > ub_elec_t0:
                     raise Exception(f"Initial stored electricity of {b} is not within bounds.")
 
-                # Set mass at t0
+                # Set electricity energy at t0
                 lb = np.full_like(t, -np.inf)
                 ub = np.full_like(t, np.inf)
                 lb[0] = elec_t0
