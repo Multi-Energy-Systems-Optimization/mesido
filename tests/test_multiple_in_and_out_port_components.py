@@ -11,6 +11,26 @@ import numpy as np
 from utils_tests import demand_matching_test, energy_conservation_test, heat_to_discharge_test
 
 
+def _calculate_pipe_port_temperature(pipe_id: str, pipe_port: str, results: dict, parameters: dict):
+    """
+    Calculate pipe temperature at port (i.e. outlet or inlet ) from heat flow and volumetric flow.
+
+    Parameters
+    ----------
+    pipe_id : Id of the pipe
+    pipe_port : Port of the pipe ("In" or "Out")
+    results : Results dictionary from the optimization
+    parameters : Parameters dictionary from the solution
+
+    """
+    heat_flow_out = results[f"{pipe_id}.Heat{pipe_port}.Heat"]
+    vol_flow = results[f"{pipe_id}.Heat{pipe_port}.Q"]
+    cp = parameters[f"{pipe_id}.cp"]
+    rho = parameters[f"{pipe_id}.rho"]
+    pipe_temp = heat_flow_out / (cp * rho * vol_flow)
+    return pipe_temp
+
+
 class TestHEX(TestCase):
 
     def test_heat_exchanger(self):
@@ -316,6 +336,61 @@ class TestHEX(TestCase):
         np.testing.assert_allclose(temp_hex, 60.0)
         np.testing.assert_allclose(temp_hex, temp_prod)
 
+    def test_heat_exchanger_with_warm_temperature_profile(self):
+        """
+        This test is to check the basic physics of a network that includes heat demand,
+        heat source and heat exchanger. The warm carrier in the secondary side of the heat
+        exchanger has a time varying temperature profile and the pipe heat losses are neglected.
+        The aim is to verify that the heat exchanger asset correctly accounts for
+        the varying warm carrier temperature in the secondary side.
+
+        Checks:
+        1. demand is matched
+        2. energy conservation in the network
+        3. heat to discharge
+        4. the temperature at the inlet of the warm-carrier pipe connected to the heat exchanger
+           matches the temperature profile specified in the input csv file
+        """
+
+        import models.heat_exchange.src.run_heat_exchanger as run_heat_exchanger
+        from models.heat_exchange.src.run_heat_exchanger import (
+            HeatProblem,
+        )
+
+        base_folder = Path(run_heat_exchanger.__file__).resolve().parent.parent
+
+        class HeatProblemNoHeatLoss(HeatProblem):
+
+            def energy_system_options(self):
+                options = super().energy_system_options()
+                options["heat_loss_disconnected_pipe"] = False
+                options["neglect_pipe_heat_losses"] = True
+
+                return options
+
+        heat_problem = run_esdl_mesido_optimization(
+            HeatProblemNoHeatLoss,
+            base_folder=base_folder,
+            esdl_file_name="heatexchanger_source_demand.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_with_warm_temp_profile.csv",
+        )
+        results = heat_problem.extract_results()
+        parameters = heat_problem.parameters(0)
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
+
+        demand_matching_test(heat_problem, results)
+        energy_conservation_test(heat_problem, results)
+        heat_to_discharge_test(heat_problem, results)
+
+        # Check the supply temperature profile of the pipe linked to secondary side of
+        # heat exchanger at pipe inlet
+        pipe_id = name_to_id_map["Pipe_408e"]
+        supply_temp_input = heat_problem.get_timeseries("heat2.temperature_profile").values
+        pipe_temp_calculated = _calculate_pipe_port_temperature(pipe_id, "In", results, parameters)
+        np.testing.assert_array_almost_equal(pipe_temp_calculated, supply_temp_input)
+
 
 class TestHP(TestCase):
     def test_heat_pump(self):
@@ -425,6 +500,61 @@ class TestHP(TestCase):
                     solution.bounds()[f"{hp_id}.Heat_flow"][1],
                     solution.esdl_assets[key].attributes["power"],
                 )
+
+    def test_heat_pump_with_warm_temperature_profile(self):
+        """
+        This test is to check the basic physics of a network that includes heat demand,
+        heat sources and heatpump. The warm carrier in the secondary side of the heat pump
+        has a time varying temperature profile and the pipe heat losses are neglected.
+        The aim is to verify that the heat pump asset correctly accounts for
+        the varying warm carrier temperature in the secondary side.
+
+        Checks:
+        1. demand is matched
+        2. energy conservation in the network
+        3. heat to discharge
+        4. the temperature at the inlet of the warm-carrier pipe connected to the heat pump
+           matches the temperature profile specified in the input csv file
+        """
+
+        import models.heatpump.src.run_heat_pump as run_heat_pump
+        from models.heatpump.src.run_heat_pump import (
+            HeatProblem,
+        )
+
+        base_folder = Path(run_heat_pump.__file__).resolve().parent.parent
+
+        class HeatProblemNoHeatLoss(HeatProblem):
+
+            def energy_system_options(self):
+                options = super().energy_system_options()
+                options["heat_loss_disconnected_pipe"] = False
+                options["neglect_pipe_heat_losses"] = True
+
+                return options
+
+        heat_problem = run_esdl_mesido_optimization(
+            HeatProblemNoHeatLoss,
+            base_folder=base_folder,
+            esdl_file_name="heatpump_source_demand.esdl",
+            esdl_parser=ESDLFileParser,
+            profile_reader=ProfileReaderFromFile,
+            input_timeseries_file="timeseries_with_warm_temp_profile.csv",
+        )
+        results = heat_problem.extract_results()
+        parameters = heat_problem.parameters(0)
+        name_to_id_map = heat_problem.esdl_asset_name_to_id_map
+
+        demand_matching_test(heat_problem, results)
+        energy_conservation_test(heat_problem, results)
+        heat_to_discharge_test(heat_problem, results)
+
+        # Check the supply temperature profile of the pipe linked to secondary side of
+        # heat pump at pipe inlet
+        pipe_id = name_to_id_map["Pipe_408e"]
+        supply_temp_input = heat_problem.get_timeseries("heat2.temperature_profile").values
+        pipe_temp_calculated = _calculate_pipe_port_temperature(pipe_id, "In", results, parameters)
+        np.testing.assert_array_almost_equal(pipe_temp_calculated, supply_temp_input)
 
 
 class Buffer(TestCase):

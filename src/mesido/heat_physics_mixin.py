@@ -1488,36 +1488,29 @@ class HeatPhysicsMixin(
         """
         constraints = []
         parameters = self.parameters(ensemble_member)
-
         for asset in self.energy_system_components.get(asset_type, []):
-            heat_nominal = parameters[f"{asset}.Heat_nominal"]
-            cp = parameters[f"{asset}.cp"]
-            rho = parameters[f"{asset}.rho"]
-
             temp_out_profile, sup_carrier_name, temp_out_prof_start_idx, temp_out_prof_end_idx = (
                 self.__get_out_port_carrier_temp_profile(parameters, asset, asset_type)
             )
-
             if (
                 temp_out_profile is not None
             ):  # Case where the out carrier has a temp profile assigned to it.
+                heat_nominal = parameters[f"{asset}.Heat_nominal"]
                 heat_out_vector = self.__state_vector_scaled(
                     f"{asset}.HeatOut.Heat", ensemble_member
                 )
                 discharge_vector = self.__state_vector_scaled(f"{asset}.Q", ensemble_member)
-
+                cp = parameters[f"{asset}.cp"]
+                rho = parameters[f"{asset}.rho"]
+                temp_out_profile_values = temp_out_profile.values[
+                    temp_out_prof_start_idx : temp_out_prof_end_idx + 1
+                ]
+                heat_out_vector_expected = discharge_vector * cp * rho * temp_out_profile_values
+                ret_temperature = parameters[f"{asset}.T_return"]
+                assert np.all(temp_out_profile_values >= ret_temperature)
                 constraints.append(
                     (
-                        (
-                            heat_out_vector
-                            - discharge_vector
-                            * cp
-                            * rho
-                            * temp_out_profile.values[
-                                temp_out_prof_start_idx : temp_out_prof_end_idx + 1
-                            ]
-                        )
-                        / heat_nominal,
+                        (heat_out_vector - heat_out_vector_expected) / heat_nominal,
                         0.0,
                         0.0,
                     )
@@ -1607,7 +1600,7 @@ class HeatPhysicsMixin(
             ensemble_member, "cold_demand"
         )
 
-    def __get_out_port_carrier_temp_profile(self, parameters, asset_name, asset_type):
+    def __get_out_port_carrier_temp_profile(self, parameters, asset_name, asset_type, side=None):
         """
         This function finds the carrier lined to the asset's out port and grabs the
         temperature profile assigned to it, if there is one assigned to it.
@@ -1637,6 +1630,10 @@ class HeatPhysicsMixin(
             "cold_demand": ".T_supply_id",
             "heat_pipe": ".carrier_id",
         }
+        if side:
+            carrier_id_types = {
+                "heat_four_port": f".{side}.T_supply_id",
+            }
         carrier_id = string_parameters[f"{asset_name}{carrier_id_types[asset_type]}"]
         if carrier_id in carriers_ids:
             sup_carrier_name = carriers[carrier_id]["name"]
@@ -2544,7 +2541,7 @@ class HeatPhysicsMixin(
 
         return constraints
 
-    def __heat_exchanger_heat_to_discharge_path_constraints(self, ensemble_member):
+    def __heat_four_port_heat_to_discharge_path_constraints(self, ensemble_member):
         """
         This function adds the heat to discharge constraints of components that connect two
         hydraulically decoupled networks. We assume that there is a dedicated primary side and
@@ -2832,52 +2829,12 @@ class HeatPhysicsMixin(
             constraint_nominal = (
                 cp_sec * rho_sec * dt_sec * bounds[f"{heat_exchanger}.Secondary.HeatIn.Q"][1]
             )
-
-            if len(supply_temperatures_sec) == 0:
-                supply_temperature = parameters[f"{heat_exchanger}.Secondary.T_supply"]
-                if len(return_temperatures_sec) != 0 and hn_settings["heat_exchanger_bypass"]:
-                    for ret_temperature in return_temperatures_sec:
-                        ret_temperature_is_selected = self.state(
-                            f"{ret_carrier_sec}_{ret_temperature}"
-                        )
-                        constraints.extend(
-                            __constraints_temperature_heat_to_discharge_bypass_secondary(
-                                ret_temperature,
-                                supply_temperature,
-                                discharge_secondary,
-                                cp_sec,
-                                rho_sec,
-                                heat_in_sec,
-                                heat_out_sec,
-                                ret_temperature_is_selected,
-                                1.0,
-                                big_m,
-                                constraint_nominal,
-                            )
-                        )
-                else:
-                    ret_temperature = parameters[f"{heat_exchanger}.Secondary.T_return"]
-                    assert supply_temperature >= ret_temperature
-                    constraints.extend(
-                        __constraints_temperature_heat_to_discharge_bypass_secondary(
-                            ret_temperature,
-                            supply_temperature,
-                            discharge_secondary,
-                            cp_sec,
-                            rho_sec,
-                            heat_in_sec,
-                            heat_out_sec,
-                            1.0,
-                            1.0,
-                            big_m,
-                            constraint_nominal,
-                        )
-                    )
-            else:
-                for supply_temperature in supply_temperatures_sec:
-                    sup_temperature_is_selected = self.state(
-                        f"{sup_carrier_sec}_{supply_temperature}"
-                    )
+            temp_sec_out_profile, _, _, _ = self.__get_out_port_carrier_temp_profile(
+                parameters, heat_exchanger, "heat_four_port", "Secondary"
+            )
+            if temp_sec_out_profile is None:
+                if len(supply_temperatures_sec) == 0:
+                    supply_temperature = parameters[f"{heat_exchanger}.Secondary.T_supply"]
                     if len(return_temperatures_sec) != 0 and hn_settings["heat_exchanger_bypass"]:
                         for ret_temperature in return_temperatures_sec:
                             ret_temperature_is_selected = self.state(
@@ -2893,13 +2850,14 @@ class HeatPhysicsMixin(
                                     heat_in_sec,
                                     heat_out_sec,
                                     ret_temperature_is_selected,
-                                    sup_temperature_is_selected,
+                                    1.0,
                                     big_m,
                                     constraint_nominal,
                                 )
                             )
                     else:
                         ret_temperature = parameters[f"{heat_exchanger}.Secondary.T_return"]
+                        assert supply_temperature >= ret_temperature
                         constraints.extend(
                             __constraints_temperature_heat_to_discharge_bypass_secondary(
                                 ret_temperature,
@@ -2910,11 +2868,56 @@ class HeatPhysicsMixin(
                                 heat_in_sec,
                                 heat_out_sec,
                                 1.0,
-                                sup_temperature_is_selected,
+                                1.0,
                                 big_m,
                                 constraint_nominal,
                             )
                         )
+                else:
+                    for supply_temperature in supply_temperatures_sec:
+                        sup_temperature_is_selected = self.state(
+                            f"{sup_carrier_sec}_{supply_temperature}"
+                        )
+                        if (
+                            len(return_temperatures_sec) != 0
+                            and hn_settings["heat_exchanger_bypass"]
+                        ):
+                            for ret_temperature in return_temperatures_sec:
+                                ret_temperature_is_selected = self.state(
+                                    f"{ret_carrier_sec}_{ret_temperature}"
+                                )
+                                constraints.extend(
+                                    __constraints_temperature_heat_to_discharge_bypass_secondary(
+                                        ret_temperature,
+                                        supply_temperature,
+                                        discharge_secondary,
+                                        cp_sec,
+                                        rho_sec,
+                                        heat_in_sec,
+                                        heat_out_sec,
+                                        ret_temperature_is_selected,
+                                        sup_temperature_is_selected,
+                                        big_m,
+                                        constraint_nominal,
+                                    )
+                                )
+                        else:
+                            ret_temperature = parameters[f"{heat_exchanger}.Secondary.T_return"]
+                            constraints.extend(
+                                __constraints_temperature_heat_to_discharge_bypass_secondary(
+                                    ret_temperature,
+                                    supply_temperature,
+                                    discharge_secondary,
+                                    cp_sec,
+                                    rho_sec,
+                                    heat_in_sec,
+                                    heat_out_sec,
+                                    1.0,
+                                    sup_temperature_is_selected,
+                                    big_m,
+                                    constraint_nominal,
+                                )
+                            )
 
             # disconnect HEX
             # Getting var for disabled constraints
@@ -3048,6 +3051,59 @@ class HeatPhysicsMixin(
                                 np.inf,
                             )
                         )
+
+        return constraints
+
+    def __heat_four_port_heat_to_discharge_variable_temp_constraints(self, ensemble_member: int):
+        """
+        Adds the same type of constraints to the heat exchanger as
+        __heat_four_port_heat_to_discharge_path_constraints for cases where the selected side out
+         carrier has a prescribed temperature profile. An important difference is that these
+         are conventional constraints, since every timestep will have a specific value.
+
+        Parameters
+        ----------
+        ensemble_member : The ensemble member index.
+        """
+        constraints = []
+        parameters = self.parameters(ensemble_member)
+        side = "Secondary"
+        for asset in [
+            *self.energy_system_components.get("heat_exchanger", []),
+            *self.energy_system_components.get("heat_pump", []),
+        ]:
+            (
+                temp_out_profile,
+                sup_carrier_name,
+                temp_out_prof_start_idx,
+                temp_out_prof_end_idx,
+            ) = self.__get_out_port_carrier_temp_profile(parameters, asset, "heat_four_port", side)
+            if (
+                temp_out_profile is not None
+            ):  # Case where the out carrier of secondary side has a temp profile assigned to it.
+                # TODO: Cater for the heat exchanger temperature profile of the carrier linked to
+                #  secondary supply when the carrier linked to secondary return has a temperature
+                #  regime and heat_exchanger_bypass is True.
+                heat_nominal = parameters[f"{asset}.{side}.Heat_nominal"]
+                heat_out_vector = self.__state_vector_scaled(
+                    f"{asset}.{side}.HeatOut.Heat", ensemble_member
+                )
+                discharge_vector = self.__state_vector_scaled(f"{asset}.{side}.Q", ensemble_member)
+                cp = parameters[f"{asset}.{side}.cp"]
+                rho = parameters[f"{asset}.{side}.rho"]
+                temp_out_profile_values = temp_out_profile.values[
+                    temp_out_prof_start_idx : temp_out_prof_end_idx + 1
+                ]
+                heat_out_vector_expected = discharge_vector * cp * rho * temp_out_profile_values
+                ret_temperature = parameters[f"{asset}.{side}.T_return"]
+                assert np.all(temp_out_profile_values >= ret_temperature)
+                constraints.append(
+                    (
+                        (heat_out_vector - heat_out_vector_expected) / heat_nominal,
+                        0.0,
+                        0.0,
+                    )
+                )
 
         return constraints
 
@@ -3664,7 +3720,7 @@ class HeatPhysicsMixin(
         constraints.extend(self.__pipe_heat_to_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__storage_heat_to_discharge_path_constraints(ensemble_member))
         constraints.extend(
-            self.__heat_exchanger_heat_to_discharge_path_constraints(ensemble_member)
+            self.__heat_four_port_heat_to_discharge_path_constraints(ensemble_member)
         )
         constraints.extend(self.__check_valve_head_discharge_path_constraints(ensemble_member))
         constraints.extend(self.__control_valve_head_discharge_path_constraints(ensemble_member))
@@ -3725,6 +3781,9 @@ class HeatPhysicsMixin(
         )
         constraints.extend(
             self.__cold_demand_heat_to_discharge_variable_temp_constraints(ensemble_member)
+        )
+        constraints.extend(
+            self.__heat_four_port_heat_to_discharge_variable_temp_constraints(ensemble_member)
         )
         constraints.extend(self.__max_ramp_constraints(ensemble_member))
 

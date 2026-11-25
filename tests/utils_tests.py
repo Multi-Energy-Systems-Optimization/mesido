@@ -14,7 +14,7 @@ from mesido.pipe_class import TRACE_TO_SINGLE_PIPE_COST_FACTOR
 import numpy as np
 
 
-def __get_out_port_temp_profile(solution, asset_name, asset_type):
+def __get_out_port_temp_profile(solution, asset_name, asset_type, side=None):
     """
     Returns the temperature profile specified (if any) for the carrier assigned to
     the carrier on the out port.
@@ -34,6 +34,10 @@ def __get_out_port_temp_profile(solution, asset_name, asset_type):
         "heat_pipe": ".carrier_id",
         "heat_source": ".T_supply_id",
     }
+    if side:
+        carrier_id_types = {
+            "heat_four_port": f".{side}.T_supply_id",
+        }
     for carrier_id in carriers_ids:
         if carrier_id == string_parameters[f"{asset_name}{carrier_id_types[asset_type]}"]:
             sup_carrier_name = carriers[carrier_id]["name"]
@@ -319,6 +323,10 @@ def heat_to_discharge_test(solution, results, atol=1e-2, rtol=1.0e-4):
             # supply_t = results[f"{supply_id}_temperature"]
             # dt = supply_t - return_t
             supply_t, return_t, dt = _get_component_temperatures(solution, results, d, p)
+            temp_profile = __get_out_port_temp_profile(solution, d, "heat_four_port", side=p)
+            if temp_profile is not None:
+                supply_t = temp_profile.values
+                supply_temp_profiles.append(temp_profile.values)
             # dt = solution.parameters(0)[f"{d}.{p}.dT"]
             # supply_t = solution.parameters(0)[f"{d}.{p}.T_supply"]
             # return_t = solution.parameters(0)[f"{d}.{p}.T_return"]
