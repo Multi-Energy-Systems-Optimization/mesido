@@ -380,14 +380,13 @@ class TestHEX(TestCase):
         parameters = heat_problem.parameters(0)
         name_to_id_map = heat_problem.esdl_asset_name_to_id_map
 
-        pipe_id = name_to_id_map["Pipe_408e"]
-
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
         # Check the supply temperature profile of the pipe linked to secondary side of
         # heat exchanger at pipe inlet
+        pipe_id = name_to_id_map["Pipe_408e"]
         supply_temp_input = heat_problem.get_timeseries("heat2.temperature_profile").values
         pipe_temp_calculated = _calculate_pipe_port_temperature(pipe_id, "In", results, parameters)
         np.testing.assert_array_almost_equal(pipe_temp_calculated, supply_temp_input)
@@ -546,14 +545,13 @@ class TestHP(TestCase):
         parameters = heat_problem.parameters(0)
         name_to_id_map = heat_problem.esdl_asset_name_to_id_map
 
-        pipe_id = name_to_id_map["Pipe_408e"]
-
         demand_matching_test(heat_problem, results)
         energy_conservation_test(heat_problem, results)
         heat_to_discharge_test(heat_problem, results)
 
         # Check the supply temperature profile of the pipe linked to secondary side of
         # heat pump at pipe inlet
+        pipe_id = name_to_id_map["Pipe_408e"]
         supply_temp_input = heat_problem.get_timeseries("heat2.temperature_profile").values
         pipe_temp_calculated = _calculate_pipe_port_temperature(pipe_id, "In", results, parameters)
         np.testing.assert_array_almost_equal(pipe_temp_calculated, supply_temp_input)
