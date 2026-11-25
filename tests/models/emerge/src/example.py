@@ -11,7 +11,7 @@ from mesido.techno_economic_mixin import TechnoEconomicMixin
 from mesido.workflows.io.write_output import ScenarioOutput
 from mesido.workflows.multicommodity_simulator_workflow import (
     MultiCommoditySimulatorNoLosses,
-    run_sequatially_staged_simulation,
+    run_sequentially_staged_simulation,
 )
 
 from rtctools.optimization.collocated_integrated_optimization_problem import (
@@ -330,7 +330,7 @@ if __name__ == "__main__":
     #         input_timeseries_file="timeseries_with_PV.csv",
     #     )
 
-    solution = run_sequatially_staged_simulation(
+    solution = run_sequentially_staged_simulation(
         multi_commodity_simulator_class=MultiCommoditySimulatorNoLosses,
         simulation_window_size=20,
         esdl_file_name="emerge_battery_priorities.esdl",

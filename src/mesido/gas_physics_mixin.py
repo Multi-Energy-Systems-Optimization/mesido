@@ -117,6 +117,9 @@ class GasPhysicsMixin(
         self.__gas_flow_direct_bounds = {}
         self._gas_pipe_to_flow_direct_map = {}
 
+        # To avoid artificial mass generation at t0
+        self.__buffer_t0_bounds = {}
+
         # Still to be implemented
         # Boolean path-variable to determine whether flow is going through a pipe.
         # self.__gas_pipe_disconnect_var = {}
@@ -159,6 +162,11 @@ class GasPhysicsMixin(
         options = self.energy_system_options()
 
         bounds = self.bounds()
+
+        # Check that buffer information is logical and
+        # set the stored gas at t0 in the buffer(s) via bounds
+        if len(self.times()) > 2:
+            self.__check_buffer_values_and_set_bounds_at_t0()
 
         for pipe_name in self.energy_system_components.get("gas_pipe", []):
             head_loss_var = f"{pipe_name}.__head_loss"
@@ -358,6 +366,7 @@ class GasPhysicsMixin(
         bounds.update(self.__gas_pipe_head_loss_zero_bounds)
         bounds.update(self.__gas_pipe_linear_line_segment_var_bounds)
         bounds.update(self.__gas_storage_discharge_bounds)
+        bounds.update(self.__buffer_t0_bounds)
 
         for k, v in self.__gas_pipe_head_bounds.items():
             bounds[k] = self.merge_bounds(bounds[k], v)
@@ -395,6 +404,58 @@ class GasPhysicsMixin(
                 )
 
         return g
+
+    def __check_buffer_values_and_set_bounds_at_t0(self):
+        """
+        In this function we force the buffer at t0 to have a certain amount of set energy in it.
+        We do this via the bounds, by providing the bounds with a time-series where the first
+        element is the initial heat in the buffer.
+        """
+        t = self.times()
+        # We assume that t0 is always equal to self.times()[0]
+        assert self.initial_time == self.times()[0]
+
+        parameters = self.parameters(0)
+        bounds = self.bounds()
+        components = self.energy_system_components
+        buffers = components.get("gas_tank_storage", [])
+
+        for b in buffers:
+            gas_mass_t0 = parameters[f"{b}.init_Gas"]
+            min_fract_vol = parameters[f"{b}.min_fraction_tank_mass"]
+            stored_mass = f"{b}.Stored_gas_mass"
+
+            if np.isnan(gas_mass_t0):
+                # Set default value
+                volume = parameters[f"{b}.volume"]
+                max_rho = parameters[f"{b}.density_max_storage"]
+                gas_mass_t0 = min_fract_vol * volume * max_rho
+
+            # Check that volume/initial stored mass at t0 is within bounds
+            lb_mass, ub_mass = bounds[stored_mass]
+            lb_mass_t0 = np.inf
+            ub_mass_t0 = -np.inf
+            for bound in [lb_mass, ub_mass]:
+                assert not isinstance(
+                    bound, np.ndarray
+                ), f"{b} stored heat cannot be a vector state"
+                if isinstance(bound, Timeseries):
+                    bound_t0 = bound.values[0]
+                else:
+                    bound_t0 = bound
+                lb_mass_t0 = min(lb_mass_t0, bound_t0)
+                ub_mass_t0 = max(ub_mass_t0, bound_t0)
+
+            if gas_mass_t0 < lb_mass_t0 or gas_mass_t0 > ub_mass_t0:
+                raise Exception(f"Initial mass of {b} is not within bounds.")
+
+            # Set mass at t0
+            lb = np.full_like(t, -np.inf)
+            ub = np.full_like(t, np.inf)
+            lb[0] = gas_mass_t0
+            ub[0] = gas_mass_t0
+            b_t0 = (Timeseries(t, lb), Timeseries(t, ub))
+            self.__buffer_t0_bounds[stored_mass] = self.merge_bounds(bounds[stored_mass], b_t0)
 
     def __get_maximum_total_head_loss(self):
         """
