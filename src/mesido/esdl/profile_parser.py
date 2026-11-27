@@ -304,7 +304,7 @@ class ESDLProfileReader(BaseProfileReader):
         ensemble: None | np.ndarray,
     ) -> None:
         profiles: Dict[str, np.ndarray] = dict()
-        logger.info("Reading profiles from InfluxDB")
+        logger.info("Reading profiles from ESDL")
         self._reference_datetimes = None
 
         # Get list of unique profiles and associated series based on specific profile attributes
@@ -316,30 +316,14 @@ class ESDLProfileReader(BaseProfileReader):
         ]:
             if profile.profileType == esdl.ProfileTypeEnum.OUTPUT:
                 continue
-            if [
-                profile.database,
-                profile.field,
-                profile.host,
-                profile.startDate,
-                profile.endDate,
-                profile.measurement,
-                profile.port,
-            ] not in unique_profiles_attributes:
-                unique_profiles_attributes.append(
-                    [
-                        profile.database,
-                        profile.field,
-                        profile.host,
-                        profile.startDate,
-                        profile.endDate,
-                        profile.measurement,
-                        profile.port,
-                    ]
-                )
+            profile_attributes = self._profile_attributes(profile)
+
+            if profile_attributes not in unique_profiles_attributes:
+                unique_profiles_attributes.append(profile_attributes)
                 unique_profiles.append(profile)
 
                 unique_series.append(
-                    self._load_profile_timeseries_from_database(profile=unique_profiles[-1])
+                    self._load_profile_timeseries_from_esdl(profile=unique_profiles[-1])
                 )
                 self._check_profile_time_series(
                     profile_time_series=unique_series[-1], profile=unique_profiles[-1]
@@ -350,8 +334,9 @@ class ESDLProfileReader(BaseProfileReader):
                     self._reference_datetimes = unique_series[-1].index
                 else:
                     if not all(unique_series[-1].index == self._reference_datetimes):
+                        profile_name = getattr(profile, "field", profile.name)
                         raise RuntimeError(
-                            f"Obtained a profile for asset {profile.field} with a "
+                            f"Obtained a profile for asset {profile_name} with a "
                             f"timeseries index that doesn't match the timeseries of "
                             f"other assets. Please ensure that the profile that is "
                             f"specified to be loaded for each asset covers exactly the "
@@ -367,17 +352,9 @@ class ESDLProfileReader(BaseProfileReader):
         ]:
             if profile.profileType == esdl.ProfileTypeEnum.OUTPUT:
                 continue
-            index_of_unique_profile = unique_profiles_attributes.index(
-                [
-                    profile.database,
-                    profile.field,
-                    profile.host,
-                    profile.startDate,
-                    profile.endDate,
-                    profile.measurement,
-                    profile.port,
-                ]
-            )
+            profile_attributes = self._profile_attributes(profile)
+
+            index_of_unique_profile = unique_profiles_attributes.index(profile_attributes)
             series = unique_series[index_of_unique_profile]
             container = profile.eContainer()
             asset = container.eContainer()
@@ -428,10 +405,11 @@ class ESDLProfileReader(BaseProfileReader):
                             " please change it to a HeatingDemand",
                         )
                 except KeyError:
+                    profile_name = getattr(profile, "field", profile.name)
                     get_potential_errors().add_potential_issue(
                         MesidoAssetIssueType.ASSET_PROFILE_CAPABILITY,
                         asset.id,
-                        f"Asset named {asset.name}: The assigment of profile field {profile.field}"
+                        f"Asset named {asset.name}: The assigment of profile field {profile_name}"
                         f" is not possible for this asset type {type(asset)}",
                     )
             else:
@@ -439,20 +417,46 @@ class ESDLProfileReader(BaseProfileReader):
                     f"Got a profile for a {container}. Currently only profiles "
                     f"for assets and commodities are supported"
                 )
-            profiles[var_base_name + variable_suffix] = converted_dataframe * profile.multiplier
+            profile_multiplier = getattr(profile, "multiplier", 1.0)
+            profiles[var_base_name + variable_suffix] = converted_dataframe * profile_multiplier
 
         for idx in range(ensemble_size):
             self._profiles[idx] = profiles.copy()
 
+    @staticmethod
+    def _profile_attributes(profile: SupportedProfilesType):
+        if isinstance(profile, esdl.InfluxDBProfile):
+            return [
+                profile.database,
+                profile.field,
+                profile.host,
+                profile.startDate,
+                profile.endDate,
+                profile.measurement,
+                profile.port,
+            ]
+        elif isinstance(profile, esdl.TimeSeriesProfile):
+            return [
+                profile.id,
+                profile.name,
+                profile.startDateTime,
+                profile.timestep,
+                profile.values,
+            ]
+        else:
+            raise RuntimeError(
+                f"Unsupported ESDL input profile {type(profile)}. Currently supported "
+                f"input profiles are {esdl.InfluxDBProfile} and {esdl.TimeSeriesProfile}."
+            )
+
     # @staticmethod
-    def _load_profile_timeseries_from_database(self, profile: SupportedProfilesType) -> pd.Series:
+    def _load_profile_timeseries_from_esdl(self, profile: SupportedProfilesType) -> pd.Series:
         """
-        Function to load the profiles from an InfluxDB. Returns a timeseries with the data for
-        the asset.
+        Load the profile time series for an asset from a supported ESDL input profile.
 
         Parameters
         ----------
-        profile : Input InfluxDBProfile for the asset in the ESDL for which a profile should be read
+        profile : Supported ESDL input profile for the asset whose time series should be loaded.
 
         Returns
         -------
@@ -516,7 +520,7 @@ class ESDLProfileReader(BaseProfileReader):
 
     @staticmethod
     def _check_profile_time_series(
-        profile_time_series: pd.Series, profile: esdl.InfluxDBProfile
+        profile_time_series: pd.Series, profile: SupportedProfilesType
     ) -> None:
         """
         Function that checks if the loaded profile matches what was expected
@@ -524,24 +528,32 @@ class ESDLProfileReader(BaseProfileReader):
         Parameters
         ----------
         profile_time_series : the pandas Series of the profile obtained for the profile.
-        profile : the InfluxDBProfile used to obtain the time series
+        profile : SupportedProfilesType used to obtain the time series
 
         Returns
         -------
         None
         """
-        if profile_time_series.index[0] != profile.startDate:
-            raise RuntimeError(
-                f"The user input profile start datetime: {profile.startDate} does not match the"
-                f" start date in the database: {profile_time_series.index[0]} for asset: "
-                f"{profile.field}"
-            )
-        if profile_time_series.index[-1] != profile.endDate:
-            raise RuntimeError(
-                f"The user input profile end datetime: {profile.endDate} does not match the end"
-                f" datetime in the database: {profile_time_series.index[-1]} for asset: "
-                f"{profile.field}"
-            )
+        if isinstance(profile, esdl.TimeSeriesProfile):
+            if profile_time_series.index[0] != profile.startDateTime:
+                raise RuntimeError(
+                    f"The user input profile start datetime: {profile.startDateTime} does not match"
+                    f" the start date in the database: {profile_time_series.index[0]} for asset: "
+                    f"{profile.name}"
+                )
+        if isinstance(profile, esdl.InfluxDBProfile):
+            if profile_time_series.index[0] != profile.startDate:
+                raise RuntimeError(
+                    f"The user input profile start datetime: {profile.startDate} does not match the"
+                    f" start date in the database: {profile_time_series.index[0]} for asset: "
+                    f"{profile.field}"
+                )
+            if profile_time_series.index[-1] != profile.endDate:
+                raise RuntimeError(
+                    f"The user input profile end datetime: {profile.endDate} does not match the end"
+                    f" datetime in the database: {profile_time_series.index[-1]} for asset: "
+                    f"{profile.field}"
+                )
 
         # Error check: ensure that the profile data has a time resolution of 3600s (1hour) as
         # expected
@@ -549,15 +561,16 @@ class ESDLProfileReader(BaseProfileReader):
         dt = idx.to_series().diff()[1:]
         problem_timesteps = idx[:-1][dt != pd.Timedelta(hours=1)]
         if not problem_timesteps.empty:
+            profile_name = getattr(profile, "field", profile.name)
             raise RuntimeError(
-                f"The timestep for variable {profile.field} at timestamp(s) {problem_timesteps} "
-                f"isn't "
-                f"exactly 1 hour"
+                f"The timestep for variable {profile_name} at timestamp(s) {problem_timesteps} "
+                f"isn't exactly 1 hour"
             )
         # Check if any NaN values exist
         if profile_time_series.isnull().any().any():
+            profile_name = getattr(profile, "field", profile.name)
             raise Exception(
-                f"Nan value was encountered in the profile data for variable {profile.field}"
+                f"Nan value was encountered in the profile data for variable {profile_name}"
             )
 
     def _convert_profile_to_correct_unit(

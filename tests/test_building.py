@@ -150,7 +150,7 @@ class TestBuilding(TestCase):
                         1e5 < max(measure_asset_profile_data),
                         True,
                     )
-                    loaded_profile_data = profile_reader._load_profile_timeseries_from_database(
+                    loaded_profile_data = profile_reader._load_profile_timeseries_from_esdl(
                         measure_asset_profile
                     )
                     loaded_profile_data_converted = profile_reader._convert_profile_to_correct_unit(

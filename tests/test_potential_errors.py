@@ -38,7 +38,7 @@ class MockESDLProfileReader(ESDLProfileReader):
             date_parser=lambda x: pd.to_datetime(x).tz_convert(datetime.timezone.utc),
         )
 
-    def _load_profile_timeseries_from_database(self, profile: esdl.InfluxDBProfile) -> pd.Series:
+    def _load_profile_timeseries_from_esdl(self, profile: esdl.InfluxDBProfile) -> pd.Series:
         return self._loaded_profiles[profile.id]
 
 
