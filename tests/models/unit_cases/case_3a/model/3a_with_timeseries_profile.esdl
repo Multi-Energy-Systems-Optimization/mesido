@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" id="fc5ffd35-149b-4046-937a-939e0fb46bcd" name="3a_with_influx_profile" description="" esdlVersion="v2211" version="8">
+<esdl:EnergySystem xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:esdl="http://www.tno.nl/esdl" id="b31c9cea-cf4c-4403-864e-0e90a34b72f1" name="3a_with_timeseries_profile" description="" esdlVersion="v2211" version="10">
   <instance xsi:type="esdl:Instance" id="a6350368-fa00-4b9b-81b0-283d35b91de0" name="Untitled Instance">
     <area xsi:type="esdl:Area" id="f280f1c3-8858-4336-906e-c7608b192bf6" name="Untitled Area">
       <asset xsi:type="esdl:HeatStorage" id="4b0cd685-2219-4b02-ad4f-da3bc5453651" capacity="100000000000.0" name="HeatStorage_4b0c" selfDischargeRate="11500.0">
@@ -17,22 +17,6 @@
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="51.98322161118308" lon="4.383137226104737"/>
         <port xsi:type="esdl:InPort" name="In" id="efad2169-5f95-4618-98ce-e89860e2897b" carrier="419b5016-12c9-475a-b46e-9e474b60aa8f" connectedTo="a7c97b65-6bdd-4a00-b9b7-6c8d214053bd"/>
         <port xsi:type="esdl:OutPort" name="out" id="db555a41-d15b-44fb-b994-f5004eb3bc85" carrier="419b5016-12c9-475a-b46e-9e474b60aa8f_ret" connectedTo="776e5a76-57a5-4c03-b361-409ccb548b88"/>
-      </asset>
-      <asset xsi:type="esdl:GeothermalSource" id="b702bda3-632c-43ff-9867-72cda41f442f" minTemperature="80.0" maxTemperature="80.0" power="1000000.0" name="GeothermalSource_b702">
-        <costInformation xsi:type="esdl:CostInformation" id="a668decd-5b98-497b-84c7-b4d11f32648c">
-          <variableOperationalCosts xsi:type="esdl:SingleValue" value="1.0" id="bc6341c5-c510-43be-8cfc-3cfaa7a2e621">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" description="COST in EUR/MWh" unit="EURO" physicalQuantity="COST" perMultiplier="MEGA" id="9feaf430-fc73-419c-af6d-c3128091f3aa" perUnit="WATTHOUR"/>
-          </variableOperationalCosts>
-          <investmentCosts xsi:type="esdl:SingleValue" value="1.0" id="f6c38846-7906-4749-a844-b10ad5556aef">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" description="COST in EUR/kW" unit="EURO" physicalQuantity="COST" perMultiplier="KILO" id="cbcbe35a-719d-4cd7-870a-0c2edaca3683" perUnit="WATT"/>
-          </investmentCosts>
-          <installationCosts xsi:type="esdl:SingleValue" id="1c42a11a-0765-4a57-b03a-d65bb5bda7b2" value="10000.0">
-            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" description="COST in EUR/EUR" unit="EURO" physicalQuantity="COST" id="7eafb8a5-c594-447f-b9a2-787d9159b999"/>
-          </installationCosts>
-        </costInformation>
-        <geometry xsi:type="esdl:Point" CRS="WGS84" lat="51.98491978527026" lon="4.3822574615478525"/>
-        <port xsi:type="esdl:OutPort" name="Out" id="f31879b6-efa1-4b2c-8740-80bebb9500a7" carrier="419b5016-12c9-475a-b46e-9e474b60aa8f" connectedTo="7cec87b6-9928-4cfb-9b7b-fe7b51908911"/>
-        <port xsi:type="esdl:InPort" name="in" id="02be741c-673b-4c30-8bad-dee320e26924" carrier="419b5016-12c9-475a-b46e-9e474b60aa8f_ret" connectedTo="53542379-cead-4b7c-97f5-891e1985a8cc"/>
       </asset>
       <asset xsi:type="esdl:Pipe" id="de7364b2-24e6-4ce3-84a3-d6870a9f93bf" length="1000.0" innerDiameter="0.16030000000000003" outerDiameter="0.25" name="Pipe_de73" related="acd16776-5e03-46d5-adc3-6c1f280027bc">
         <geometry xsi:type="esdl:Line" CRS="WGS84">
@@ -134,7 +118,7 @@
         </costInformation>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="51.98544177915329" lon="4.387986660003663"/>
         <port xsi:type="esdl:InPort" name="In" id="18b90d93-5005-45d0-b558-ece8994d39ae" connectedTo="0f61b1e9-cf22-403c-8788-a0b00963dc5f" carrier="419b5016-12c9-475a-b46e-9e474b60aa8f">
-          <profile xsi:type="esdl:TimeSeriesProfile" name="example_timeseries" startDateTime="2018-12-31T23:00:00.000000+0000" timestep="3600" id="11cd02c1-a151-46b3-8928-2459a7e6d64c" profileType="INPUT" values="0.150 0.200 0.250 0.200 0.150">
+          <profile xsi:type="esdl:TimeSeriesProfile" name="example_timeseries" startDateTime="2018-12-31T23:00:00.000000+0000" id="11cd02c1-a151-46b3-8928-2459a7e6d64c" profileType="INPUT" values="0.15 0.2 0.25 0.2 0.15">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="e9405fc8-5e57-4df5-8584-4babee7cdf1b"/>
           </profile>
         </port>
@@ -155,7 +139,7 @@
         </costInformation>
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="51.98435813948783" lon="4.3883728981018075"/>
         <port xsi:type="esdl:InPort" name="In" id="f5eb43f1-fb71-4d82-97cc-3fb0eb2c209d" connectedTo="618a8f33-60c9-4265-83e2-13916fc28e75" carrier="419b5016-12c9-475a-b46e-9e474b60aa8f">
-          <profile xsi:type="esdl:TimeSeriesProfile" name="example_timeseries" startDateTime="2018-12-31T23:00:00.000000+0000" timestep="3600" id="7b4f5c07-9b7f-4153-8b77-339e2ca2f385" profileType="INPUT" values="0.150 0.200 0.250 0.200 0.150">
+          <profile xsi:type="esdl:TimeSeriesProfile" name="example_timeseries" startDateTime="2018-12-31T23:00:00.000000+0000" id="7b4f5c07-9b7f-4153-8b77-339e2ca2f385" profileType="INPUT" values="0.15 0.2 0.25 0.2 0.15">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="e9405fc8-5e57-4df5-8584-4babee7cdf1b"/>
           </profile>
         </port>
@@ -164,7 +148,7 @@
       <asset xsi:type="esdl:HeatingDemand" id="208d2055-e5cd-4382-a561-19ddedec4428" minTemperature="70.0" power="1000000.0" name="HeatingDemand_208d">
         <geometry xsi:type="esdl:Point" CRS="WGS84" lat="51.983472707127596" lon="4.388158321380616"/>
         <port xsi:type="esdl:InPort" name="In" id="889db852-2751-425f-ab8c-989ff878acf8" connectedTo="75895019-b7a1-45c4-8550-8f01bc3a6f2a" carrier="419b5016-12c9-475a-b46e-9e474b60aa8f">
-          <profile xsi:type="esdl:TimeSeriesProfile" name="example_timeseries" startDateTime="2018-12-31T23:00:00.000000+0000" timestep="3600" id="69473309-b5d7-4ea8-9b1a-82bc7a8c1de6" profileType="INPUT" values="0.150 0.200 0.250 0.200 0.150">
+          <profile xsi:type="esdl:TimeSeriesProfile" name="example_timeseries" startDateTime="2018-12-31T23:00:00.000000+0000" id="69473309-b5d7-4ea8-9b1a-82bc7a8c1de6" profileType="INPUT" values="0.15 0.2 0.25 0.2 0.15">
             <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="e9405fc8-5e57-4df5-8584-4babee7cdf1b"/>
           </profile>
         </port>
@@ -175,7 +159,7 @@
           <point xsi:type="esdl:Point" lat="51.98474138090263" lon="4.382675886154176"/>
           <point xsi:type="esdl:Point" lat="51.9842920630504" lon="4.384349584579469"/>
         </geometry>
-        <port xsi:type="esdl:InPort" name="In" id="7cec87b6-9928-4cfb-9b7b-fe7b51908911" connectedTo="f31879b6-efa1-4b2c-8740-80bebb9500a7" carrier="419b5016-12c9-475a-b46e-9e474b60aa8f"/>
+        <port xsi:type="esdl:InPort" name="In" id="7cec87b6-9928-4cfb-9b7b-fe7b51908911" connectedTo="3d0da09d-4668-4026-99a5-720050c11724" carrier="419b5016-12c9-475a-b46e-9e474b60aa8f"/>
         <port xsi:type="esdl:OutPort" name="Out" id="beb9f479-61b9-48d2-a492-850dedc2826e" connectedTo="4dc27c51-a337-402a-9fdb-376aa78b98bf" carrier="419b5016-12c9-475a-b46e-9e474b60aa8f"/>
         <material xsi:type="esdl:CompoundMatter" compoundType="LAYERED">
           <component xsi:type="esdl:CompoundMatterComponent" layerWidth="0.004">
@@ -206,7 +190,7 @@
           </component>
         </material>
         <port xsi:type="esdl:InPort" name="In" id="b1476c2d-cb2c-4efe-b854-7435ee1789e8" connectedTo="06a60970-d7d0-4e0f-827c-b3accf4048ae" carrier="419b5016-12c9-475a-b46e-9e474b60aa8f_ret"/>
-        <port xsi:type="esdl:OutPort" name="Out" id="53542379-cead-4b7c-97f5-891e1985a8cc" connectedTo="02be741c-673b-4c30-8bad-dee320e26924" carrier="419b5016-12c9-475a-b46e-9e474b60aa8f_ret"/>
+        <port xsi:type="esdl:OutPort" name="Out" id="53542379-cead-4b7c-97f5-891e1985a8cc" connectedTo="d8d03271-4d93-47ca-a38c-42e6ef4124f0" carrier="419b5016-12c9-475a-b46e-9e474b60aa8f_ret"/>
       </asset>
       <asset xsi:type="esdl:Pipe" id="03bc68c6-cead-40bc-93e2-70838ea463e9" length="1000.0" innerDiameter="0.16030000000000003" outerDiameter="0.25" name="Pipe_e53a_ret" related="e53abd80-80fa-416e-9950-94e149bcab8d">
         <geometry xsi:type="esdl:Line" CRS="WGS84">
@@ -283,6 +267,30 @@
         </material>
         <port xsi:type="esdl:InPort" name="In" id="5b25d760-cdb5-460e-bde2-283058a4b124" connectedTo="31ec92fd-18c8-4788-9d6d-b96fab55e6e5" carrier="419b5016-12c9-475a-b46e-9e474b60aa8f_ret"/>
         <port xsi:type="esdl:OutPort" name="Out" id="5b87fbb9-44a9-41e1-9088-19561c4c5836" connectedTo="c43e1fb4-83c1-4830-afef-828db81160a7" carrier="419b5016-12c9-475a-b46e-9e474b60aa8f_ret"/>
+      </asset>
+      <asset xsi:type="esdl:ResidualHeatSource" name="ResidualHeatSource_5012" description="Example source: WLQ (WarmtelinQ), T_sup&gt;80ºC, cost valid for power 0.5-1000MW" technicalLifetime="15.0" power="10000000.0" id="50127451-079e-4e84-a798-04e440b490dd">
+        <costInformation xsi:type="esdl:CostInformation" id="46de8418-c3c3-4959-9ff5-d40ac2aa405e">
+          <investmentCosts xsi:type="esdl:SingleValue" id="aeba2f86-5a5b-4310-abff-fe238616a476" value="282.0">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" unit="EURO" perMultiplier="KILO" perUnit="WATT" id="e290ef1e-f94d-4b9b-b16b-d37f01259c7d"/>
+          </investmentCosts>
+          <variableOperationalCosts xsi:type="esdl:SingleValue" id="050e047b-f964-424e-a33b-832e3c9ebb44" value="1.3">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" unit="EURO" perMultiplier="MEGA" perUnit="WATTHOUR" id="bb34ed84-01a3-4e5c-95a6-28c72cf6483e"/>
+          </variableOperationalCosts>
+          <fixedMaintenanceCosts xsi:type="esdl:SingleValue" id="ff320f06-d361-4ec2-93a9-340a01bc67df" value="8.5">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitType" physicalQuantity="COST" unit="EURO" perMultiplier="KILO" perUnit="WATT" perTimeUnit="YEAR" id="cd7b9b32-7cfc-4866-a482-94bc1b8d4fc2"/>
+          </fixedMaintenanceCosts>
+        </costInformation>
+        <constraint xsi:type="esdl:RangedConstraint" id="fde67cab-d8fd-4902-a5ad-e8014b3eabb8" name="maximum power for sizing the asset" attributeReference="power">
+          <range xsi:type="esdl:Range" id="232aed66-b01c-4dea-9154-3f2b0e88c962" maxValue="10000000.0"/>
+        </constraint>
+        <constraint xsi:type="esdl:ProfileConstraint" id="ec599729-4069-4570-85ea-68400ce6bdd7" name="maximum_profile" description="" attributeReference="power">
+          <maximum xsi:type="esdl:TimeSeriesProfile" name="example_timeseries" startDateTime="2018-12-31T23:00:00.000000+0000" timestep="3600" id="69473309-b5d7-4ea8-9b1a-82bc7a8c1de6" profileType="INPUT" values="0.500 0.550 0.600 0.550 0.500">
+            <profileQuantityAndUnit xsi:type="esdl:QuantityAndUnitReference" reference="e9405fc8-5e57-4df5-8584-4babee7cdf1b"/>
+          </maximum>
+        </constraint>
+        <port xsi:type="esdl:InPort" id="d8d03271-4d93-47ca-a38c-42e6ef4124f0" name="In" connectedTo="53542379-cead-4b7c-97f5-891e1985a8cc" carrier="419b5016-12c9-475a-b46e-9e474b60aa8f_ret"/>
+        <port xsi:type="esdl:OutPort" id="3d0da09d-4668-4026-99a5-720050c11724" name="Out" connectedTo="7cec87b6-9928-4cfb-9b7b-fe7b51908911" carrier="419b5016-12c9-475a-b46e-9e474b60aa8f"/>
+        <geometry xsi:type="esdl:Point" lat="51.98490494223564" lon="4.382168948650361"/>
       </asset>
     </area>
   </instance>

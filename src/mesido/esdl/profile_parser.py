@@ -322,16 +322,9 @@ class ESDLProfileReader(BaseProfileReader):
                 unique_profiles_attributes.append(profile_attributes)
                 unique_profiles.append(profile)
 
-                if isinstance(unique_profiles[-1], esdl.TimeSeriesProfile):
-                    unique_series.append(
-                        self._load_profile_timeseries_from_esdl_timeseries(
-                            profile=unique_profiles[-1]
-                        )
-                    )
-                else:
-                    unique_series.append(
-                        self._load_profile_timeseries_from_database(profile=unique_profiles[-1])
-                    )
+                unique_series.append(
+                    self._load_profile_timeseries_from_esdl(profile=unique_profiles[-1])
+                )
                 self._check_profile_time_series(
                     profile_time_series=unique_series[-1], profile=unique_profiles[-1]
                 )
@@ -456,14 +449,14 @@ class ESDLProfileReader(BaseProfileReader):
                 f"input profiles are {esdl.InfluxDBProfile} and {esdl.TimeSeriesProfile}."
             )
 
-    def _load_profile_timeseries_from_database(self, profile: esdl.InfluxDBProfile) -> pd.Series:
+    # @staticmethod
+    def _load_profile_timeseries_from_esdl(self, profile: SupportedProfilesType) -> pd.Series:
         """
-        Function to load the profiles from an InfluxDB. Returns a timeseries with the data for
-        the asset.
+        Load the profile time series for an asset from a supported ESDL input profile.
 
         Parameters
         ----------
-        profile : Input InfluxDBProfile for the asset in the ESDL for which a profile should be read
+        profile : Supported ESDL input profile for the asset whose time series should be loaded.
 
         Returns
         -------
@@ -524,26 +517,6 @@ class ESDLProfileReader(BaseProfileReader):
         series = pd.Series(data=data, index=index)
 
         return series
-
-    @staticmethod
-    def _load_profile_timeseries_from_esdl_timeseries(profile: esdl.TimeSeriesProfile) -> pd.Series:
-        if profile.startDateTime is None:
-            raise RuntimeError(f"TimeSeriesProfile {profile.id} is missing 'startDateTime'. ")
-        if profile.timestep is None or profile.timestep <= 0:
-            raise RuntimeError(f"TimeSeriesProfile {profile.id} has non-positive timestep")
-
-        start_datetime = profile.startDateTime
-        if start_datetime.tzinfo is None:
-            start_datetime = start_datetime.replace(tzinfo=datetime.timezone.utc)
-            logger.warning("No timezone specified for the input profile: default UTC has been used")
-
-        index = pd.DatetimeIndex(
-            [
-                start_datetime + datetime.timedelta(seconds=profile.timestep * i)
-                for i in range(len(profile.values))
-            ]
-        )
-        return pd.Series(data=profile.values, index=index)
 
     @staticmethod
     def _check_profile_time_series(
