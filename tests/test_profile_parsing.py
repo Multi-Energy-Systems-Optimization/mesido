@@ -432,6 +432,32 @@ class TestProfileLoading(unittest.TestCase):
                 atol=1e-2,
             )
 
+    def test_loading_from_timeseries_profile(self):
+        """
+        This test loads a problem using an ESDL file which has TimeSeriesProfile profiles
+        specified, and checks if the profile_parser correctly loads those profiles
+        and checks for their correctness against manually.
+        """
+
+        import models.unit_cases.case_3a.src.run_3a as run_3a
+        from models.unit_cases.case_3a.src.run_3a import HeatProblemESDLProdProfile
+
+        base_folder = Path(run_3a.__file__).resolve().parent.parent
+        model_folder = base_folder / "model"
+        problem = HeatProblemESDLProdProfile(
+            base_folder=base_folder,
+            model_folder=model_folder,
+            esdl_file_name="3a_with_timeseries_profile.esdl",
+            esdl_parser=ESDLFileParser,
+        )
+        problem.pre()
+
+        np.testing.assert_equal(problem.io.reference_datetime.tzinfo, datetime.timezone.utc)
+        expected_profile_values = np.array([0.150, 0.200, 0.250, 0.200, 0.150]) * 1.0e6
+        for asset_id in problem.energy_system_components.get("heat_demand"):
+            profile_values = problem.get_timeseries(f"{asset_id}.target_heat_demand").values
+            np.testing.assert_allclose(profile_values, expected_profile_values)
+
     def test_loading_profiles_ensemble_members(self):
         """
         This test constructs multiple ensemble members based on an "ensemble_member" CSV file
